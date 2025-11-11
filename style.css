@@ -1,0 +1,77 @@
+:root {
+  font-family: 'Segoe UI', 'Orbitron', sans-serif;
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: radial-gradient(120% 120% at 50% 35%, rgba(35, 12, 60, 0.95), rgba(5, 5, 20, 1));
+  color: #f7f7ff;
+}
+
+canvas {
+  display: block;
+  cursor: none;
+}
+
+#loading {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+  letter-spacing: 0.2rem;
+  text-transform: uppercase;
+  background: rgba(6, 5, 16, 0.85);
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+  z-index: 10;
+}
+
+#loading.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+#hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 2rem;
+  z-index: 5;
+}
+
+.reticle {
+  width: 22px;
+  height: 22px;
+  border: 1px solid rgba(160, 200, 255, 0.6);
+  border-radius: 4px;
+  box-shadow: 0 0 12px rgba(110, 180, 255, 0.4);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.hint {
+  font-size: 0.75rem;
+  letter-spacing: 0.4rem;
+  opacity: 0.65;
+  text-transform: uppercase;
+}
+
+body.pointerlocked .hint {
+  opacity: 0;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(120, 200, 255, 0.4);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(190, 220, 255, 0.55);
+    transform: scale(1.08);
+  }
+}
