@@ -251,20 +251,11 @@ const projectsData = [
 
 const manager = new THREE.LoadingManager();
 manager.onLoad = () => {
-  if (!loadingOverlay.classList.contains('failed')) {
-    loadingOverlay.classList.add('hidden');
-  }
-};
-manager.onError = url => {
-  console.error(`Échec de chargement pour ${url}`);
-  const filename = url ? url.split('/').pop() : 'ressource inconnue';
-  loadingOverlay.textContent = `Erreur de chargement : ${filename}`;
-  loadingOverlay.classList.add('failed');
-  window.setTimeout(() => loadingOverlay.classList.add('hidden'), 3600);
+  loadingOverlay.classList.add('hidden');
 };
 const loader = new GLTFLoader(manager);
 manager.onProgress = (url, loaded, total) => {
-  if (!loadingOverlay.classList.contains('hidden') && !loadingOverlay.classList.contains('failed')) {
+  if (!loadingOverlay.classList.contains('hidden')) {
     loadingOverlay.textContent = `Chargement des artefacts ${loaded} / ${total}`;
   }
 };
@@ -376,58 +367,49 @@ function orientTowardsCenter(object) {
 
 async function loadProjects() {
   const promises = projectsData.map(async (project, index) => {
-    try {
-      const gltf = await loader.loadAsync(project.file);
-      const anchor = new THREE.Group();
-      anchor.name = project.name;
-      const asset = gltf.scene;
-      const meshes = [];
-      asset.traverse(node => {
-        if (node.isMesh) {
-          node.material = node.material.clone();
-          node.material.emissive = node.material.emissive || new THREE.Color(0x101026);
-          node.material.emissiveIntensity = 0.35;
-          meshes.push(node);
-        }
-      });
-      const baseScale = 0.9;
-      asset.scale.setScalar(baseScale);
-      anchor.add(asset);
+    const gltf = await loader.loadAsync(project.file);
+    const anchor = new THREE.Group();
+    anchor.name = project.name;
+    const asset = gltf.scene;
+    const meshes = [];
+    asset.traverse(node => {
+      if (node.isMesh) {
+        node.material = node.material.clone();
+        node.material.emissive = node.material.emissive || new THREE.Color(0x101026);
+        node.material.emissiveIntensity = 0.35;
+        meshes.push(node);
+      }
+    });
+    const baseScale = 0.9;
+    asset.scale.setScalar(baseScale);
+    anchor.add(asset);
 
-      const radius = 4.2;
-      const pos = fibonacciSphere(index, projectsData.length, radius);
-      anchor.position.copy(pos);
-      orientTowardsCenter(anchor);
+    const radius = 4.2;
+    const pos = fibonacciSphere(index, projectsData.length, radius);
+    anchor.position.copy(pos);
+    orientTowardsCenter(anchor);
 
-      anchor.userData = {
-        project,
-        asset,
-        baseScale,
-        focusTween: null,
-        highlight: false,
-        floatOffset: Math.random() * Math.PI * 2,
-        rotationSpeed: THREE.MathUtils.randFloat(0.2, 0.45),
-        meshes,
-      };
+    anchor.userData = {
+      project,
+      asset,
+      baseScale,
+      focusTween: null,
+      highlight: false,
+      floatOffset: Math.random() * Math.PI * 2,
+      rotationSpeed: THREE.MathUtils.randFloat(0.2, 0.45),
+      meshes,
+    };
 
-      projectAnchors.push(anchor);
-      projectTargets.push(anchor);
-      scene.add(anchor);
+    projectAnchors.push(anchor);
+    projectTargets.push(anchor);
+    scene.add(anchor);
 
-      const popup = createPopup(project);
-      popups.set(project.id, popup);
+    const popup = createPopup(project);
+    popups.set(project.id, popup);
 
-      return anchor;
-    } catch (error) {
-      console.error(`Impossible de charger le projet ${project.name}`, error);
-      return null;
-    }
+    return anchor;
   });
-  const results = await Promise.all(promises);
-  if (results.every(result => result === null)) {
-    loadingOverlay.textContent = 'Aucun projet n\'a pu être chargé.';
-    loadingOverlay.classList.add('failed');
-  }
+  await Promise.all(promises);
 }
 
 let pointerLocked = false;

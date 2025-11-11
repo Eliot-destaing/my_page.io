@@ -33,11 +33,6 @@ canvas {
   visibility: hidden;
 }
 
-#loading.failed {
-  color: #ff9cb6;
-  letter-spacing: 0.1rem;
-}
-
 #hud {
   position: fixed;
   inset: 0;
