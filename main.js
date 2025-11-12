@@ -1,16 +1,16 @@
-import * as THREE from './libs/three.module.js';
-import { GLTFLoader } from './libs/GLTFLoader.js';
-import { EffectComposer } from './libs/postprocessing/EffectComposer.js';
-import { RenderPass } from './libs/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from './libs/postprocessing/UnrealBloomPass.js';
-import { ShaderPass } from './libs/postprocessing/ShaderPass.js';
-import { VignetteShader } from './libs/postprocessing/VignetteShader.js';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader.js';
 import { Text } from 'troika-three-text';
 import gsap from './libs/gsap.min.js';
 
 const loadingOverlay = document.getElementById('loading');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.1;
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
