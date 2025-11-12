@@ -148,7 +148,7 @@ const projectsData = [
     id: 'semestre_bolivie',
     name: 'Semestre Bolivie',
     subtitle: 'Carnet d\'exploration à La Paz & Uyuni',
-    file: 'assets/models/semestre_bolivie.gltf',
+    file: 'objet3d/alpaga porte-clés 3d.glb',
     description:
       'Journal visuel de mission universitaire en Bolivie — immersion terrain, reportage photographique et narration sensible des communautés andines.',
     link: 'https://github.com/example/semestre-bolivie',
@@ -157,7 +157,7 @@ const projectsData = [
     id: 'retro_game_unity',
     name: 'Retro Game Unity',
     subtitle: 'Jeu Unity style années 90',
-    file: 'assets/models/retro_game_unity.gltf',
+    file: 'objet3d/game boy modèle 3d.glb',
     description:
       'Jeu Unity inspiré des consoles 90s avec shaders CRT, scoring arcade et animations low-poly.',
     link: 'https://github.com/example/retro-game-unity',
