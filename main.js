@@ -5,6 +5,7 @@ import { RenderPass } from './libs/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from './libs/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from './libs/postprocessing/ShaderPass.js';
 import { VignetteShader } from './libs/postprocessing/VignetteShader.js';
+import { Text } from 'troika-three-text';
 import gsap from './libs/gsap.min.js';
 
 const loadingOverlay = document.getElementById('loading');
@@ -143,109 +144,13 @@ for (let i = 0; i < 45; i++) {
 const goldenRatio = (1 + Math.sqrt(5)) / 2;
 const projectsData = [
   {
-    id: 'ocr_sudoku',
-    name: 'OCR Sudoku',
-    file: 'assets/models/ocr_sudoku.gltf',
-    description: 'Interface d’IA OCR capable de résoudre des grilles manuscrites grâce au traitement d’image et à la vision par ordinateur.',
-    link: 'https://github.com/example/ocr-sudoku',
-  },
-  {
     id: 'semestre_bolivie',
     name: 'Semestre Bolivie',
+    subtitle: 'Carnet d’exploration à La Paz & Uyuni',
     file: 'assets/models/semestre_bolivie.gltf',
-    description: 'Journal visuel de mission universitaire en Bolivie — suivi terrain, reportage et mise en récit sensible.',
+    description:
+      'Journal visuel de mission universitaire en Bolivie — immersion terrain, reportage photographique et narration sensible des communautés andines.',
     link: 'https://github.com/example/semestre-bolivie',
-  },
-  {
-    id: 'shell_posix',
-    name: 'Shell POSIX',
-    file: 'assets/models/shell_posix.gltf',
-    description: 'Implémentation d’un shell POSIX minimaliste avec piping, redirections et scripts personnalisés.',
-    link: 'https://github.com/example/shell-posix',
-  },
-  {
-    id: 'retro_game_unity',
-    name: 'Retro Game Unity',
-    file: 'assets/models/retro_game_unity.gltf',
-    description: 'Jeu Unity inspiré des consoles 90s avec shaders CRT, scoring arcade et animations low-poly.',
-    link: 'https://github.com/example/retro-game-unity',
-  },
-  {
-    id: 'stage_minarm',
-    name: 'Stage MINARM',
-    file: 'assets/models/stage_minarm.gltf',
-    description: 'Prototype de mini-char autonome pour le ministère des Armées : navigation, capteurs inertiels, IHM embarquée.',
-    link: 'https://github.com/example/stage-minarm',
-  },
-  {
-    id: 'nebula_synth',
-    name: 'Nebula Synth',
-    file: 'assets/models/nebula_synth.gltf',
-    description: 'Synthétiseur sonore WebGL génératif contrôlé par gestes — pads harmoniques, delays cosmiques.',
-    link: 'https://github.com/example/nebula-synth',
-  },
-  {
-    id: 'drone_mapper',
-    name: 'Drone Mapper',
-    file: 'assets/models/drone_mapper.gltf',
-    description: 'Cartographie en temps réel par drone avec pipeline SLAM et alignement de nuages de points.',
-    link: 'https://github.com/example/drone-mapper',
-  },
-  {
-    id: 'holo_ui',
-    name: 'Holo UI',
-    file: 'assets/models/holo_ui.gltf',
-    description: 'Suite d’interfaces holographiques modulaires pour cockpit spatial — design system et guidelines 3D.',
-    link: 'https://github.com/example/holo-ui',
-  },
-  {
-    id: 'atlas_cartography',
-    name: 'Atlas Cartography',
-    file: 'assets/models/atlas_cartography.gltf',
-    description: 'Pipeline de cartographie interactive, rendu de reliefs planétaires et projection temps réel.',
-    link: 'https://github.com/example/atlas-cartography',
-  },
-  {
-    id: 'quantum_chess',
-    name: 'Quantum Chess',
-    file: 'assets/models/quantum_chess.gltf',
-    description: 'Moteur de jeu en logique quantique avec superposition de coups et visualisation multi-timeline.',
-    link: 'https://github.com/example/quantum-chess',
-  },
-  {
-    id: 'titan_dashboard',
-    name: 'Titan Dashboard',
-    file: 'assets/models/titan_dashboard.gltf',
-    description: 'Dashboard d’observatoire Titan : télémétrie, anomalies, suivi d’orbite en WebGL / WebXR.',
-    link: 'https://github.com/example/titan-dashboard',
-  },
-  {
-    id: 'aurora_shader',
-    name: 'Aurora Shader',
-    file: 'assets/models/aurora_shader.gltf',
-    description: 'Suite de shaders temps réel pour reproduire des aurores boréales dynamiques et volumétriques.',
-    link: 'https://github.com/example/aurora-shader',
-  },
-  {
-    id: 'deep_research',
-    name: 'Deep Research',
-    file: 'assets/models/deep_research.gltf',
-    description: 'Plateforme de fouille documentaire augmentée, recommandation contextuelle et interface 3D.',
-    link: 'https://github.com/example/deep-research',
-  },
-  {
-    id: 'terra_robotics',
-    name: 'Terra Robotics',
-    file: 'assets/models/terra_robotics.gltf',
-    description: 'Robot de terrain autonome pour l’agriculture, navigation multi-capteurs et jumeau numérique.',
-    link: 'https://github.com/example/terra-robotics',
-  },
-  {
-    id: 'lidar_vision',
-    name: 'Lidar Vision',
-    file: 'assets/models/lidar_vision.gltf',
-    description: 'Vision 3D LiDAR : segmentation sémantique, filtrage dynamique et rendu volumique colorisé.',
-    link: 'https://github.com/example/lidar-vision',
   },
 ];
 
@@ -274,72 +179,180 @@ function fibonacciSphere(index, total, radius) {
   );
 }
 
-function createProjectPopupTexture(project) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 512;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#120622';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-  gradient.addColorStop(0, 'rgba(120, 140, 255, 0.3)');
-  gradient.addColorStop(1, 'rgba(50, 10, 90, 0.8)');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(40, 40, canvas.width - 80, canvas.height - 80);
-  ctx.strokeStyle = 'rgba(210, 220, 255, 0.35)';
-  ctx.lineWidth = 6;
-  ctx.strokeRect(40, 40, canvas.width - 80, canvas.height - 80);
-  ctx.fillStyle = '#f7f8ff';
-  ctx.font = '64px "Segoe UI", sans-serif';
-  ctx.fillText(project.name, 80, 130);
-  ctx.font = '30px "Segoe UI", sans-serif';
-  const textWidth = canvas.width - 160;
-  const words = project.description.split(' ');
-  let line = '';
-  let y = 210;
-  for (const word of words) {
-    const testLine = line + word + ' ';
-    const metrics = ctx.measureText(testLine);
-    if (metrics.width > textWidth) {
-      ctx.fillText(line.trim(), 80, y);
-      line = word + ' ';
-      y += 48;
-    } else {
-      line = testLine;
-    }
+const popupPanelVertexShader = /* glsl */ `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
-  if (line.trim().length) {
-    ctx.fillText(line.trim(), 80, y);
+`;
+
+const popupPanelFragmentShader = /* glsl */ `
+  varying vec2 vUv;
+  uniform vec3 uColorTop;
+  uniform vec3 uColorBottom;
+  uniform vec3 uAccent;
+  uniform float uAlpha;
+  uniform float uGlow;
+
+  void main() {
+    vec2 uv = vUv;
+    float rim = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
+    float border = smoothstep(0.06, 0.0, rim);
+    float glowRing = smoothstep(0.18, 0.0, abs(uv.y - 0.8));
+    vec3 base = mix(uColorBottom, uColorTop, pow(uv.y, 1.1));
+    base = mix(base, uAccent, border * 0.5 + glowRing * uGlow * 0.4);
+    float alpha = uAlpha * (0.78 + border * 0.2);
+    if (alpha <= 0.01) discard;
+    gl_FragColor = vec4(base, alpha);
   }
-  ctx.font = '34px "Segoe UI", sans-serif';
-  ctx.fillStyle = '#9dd6ff';
-  ctx.fillText('Voir sur GitHub →', 80, canvas.height - 120);
-  ctx.fillStyle = 'rgba(157, 214, 255, 0.35)';
-  ctx.fillRect(60, canvas.height - 170, 360, 80);
-  ctx.strokeStyle = 'rgba(157, 214, 255, 0.65)';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(60, canvas.height - 170, 360, 80);
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.minFilter = THREE.LinearFilter;
-  texture.generateMipmaps = false;
-  return texture;
+`;
+
+function createPopupPanelMaterial() {
+  return new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    uniforms: {
+      uColorTop: { value: new THREE.Color(0x433580) },
+      uColorBottom: { value: new THREE.Color(0x0b051a) },
+      uAccent: { value: new THREE.Color(0x8fc0ff) },
+      uAlpha: { value: 0.0 },
+      uGlow: { value: 0.0 },
+    },
+    vertexShader: popupPanelVertexShader,
+    fragmentShader: popupPanelFragmentShader,
+  });
 }
 
 function createPopup(project) {
   const popupGroup = new THREE.Group();
   popupGroup.name = `popup-${project.id}`;
-  const texture = createProjectPopupTexture(project);
-  const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false });
-  const panel = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.8), material);
+
+  const panelMaterial = createPopupPanelMaterial();
+  const panel = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.1), panelMaterial);
+  panel.renderOrder = 10;
+  panel.layers.enable(1);
   popupGroup.add(panel);
-  const buttonGeometry = new THREE.PlaneGeometry(0.55, 0.12);
-  const buttonMaterial = new THREE.MeshBasicMaterial({ color: 0x79b7ff, transparent: true, opacity: 0.0 });
-  const buttonMesh = new THREE.Mesh(buttonGeometry, buttonMaterial);
-  buttonMesh.position.set(-0.45 + 0.55 / 2, -0.25, 0.01);
+
+  const title = new Text();
+  title.text = project.name;
+  title.fontSize = 0.22;
+  title.anchorX = 'left';
+  title.anchorY = 'top';
+  title.maxWidth = 1.5;
+  title.position.set(-0.86, 0.42, 0.02);
+  title.color = '#f1f4ff';
+  title.letterSpacing = 0.01;
+  title.material.transparent = true;
+  title.material.depthWrite = false;
+  title.layers.enable(1);
+  title.frustumCulled = false;
+  popupGroup.add(title);
+
+  let subtitle = null;
+  if (project.subtitle) {
+    subtitle = new Text();
+    subtitle.text = project.subtitle;
+    subtitle.fontSize = 0.115;
+    subtitle.anchorX = 'left';
+    subtitle.anchorY = 'top';
+    subtitle.maxWidth = 1.5;
+    subtitle.position.set(-0.86, 0.22, 0.02);
+    subtitle.color = '#9ad7ff';
+    subtitle.letterSpacing = 0.005;
+    subtitle.material.transparent = true;
+    subtitle.material.depthWrite = false;
+    subtitle.layers.enable(1);
+    subtitle.frustumCulled = false;
+    popupGroup.add(subtitle);
+  }
+
+  const body = new Text();
+  body.text = project.description;
+  body.fontSize = 0.1;
+  body.anchorX = 'left';
+  body.anchorY = 'top';
+  body.maxWidth = 1.5;
+  body.lineHeight = 1.4;
+  body.position.set(-0.86, subtitle ? 0.02 : 0.18, 0.02);
+  body.color = '#c7d7ff';
+  body.material.transparent = true;
+  body.material.depthWrite = false;
+  body.layers.enable(1);
+  body.frustumCulled = false;
+  popupGroup.add(body);
+
+  const buttonBackground = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.85, 0.24),
+    new THREE.MeshBasicMaterial({
+      color: 0x7ab8ff,
+      transparent: true,
+      opacity: 0.22,
+      depthWrite: false,
+    })
+  );
+  buttonBackground.position.set(0.0, -0.45, 0.01);
+  buttonBackground.layers.enable(1);
+  popupGroup.add(buttonBackground);
+
+  const buttonOutline = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.PlaneGeometry(0.85, 0.24)),
+    new THREE.LineBasicMaterial({
+      color: 0xb3d9ff,
+      transparent: true,
+      opacity: 0.55,
+      depthWrite: false,
+    })
+  );
+  buttonOutline.position.set(0.0, -0.45, 0.012);
+  buttonOutline.layers.enable(1);
+  popupGroup.add(buttonOutline);
+
+  const buttonLabel = new Text();
+  buttonLabel.text = 'Voir sur GitHub';
+  buttonLabel.fontSize = 0.12;
+  buttonLabel.anchorX = 'center';
+  buttonLabel.anchorY = 'middle';
+  buttonLabel.position.set(0.0, -0.45, 0.02);
+  buttonLabel.color = '#e2f2ff';
+  buttonLabel.material.transparent = true;
+  buttonLabel.material.depthWrite = false;
+  buttonLabel.layers.enable(1);
+  buttonLabel.frustumCulled = false;
+  popupGroup.add(buttonLabel);
+
+  const buttonMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.85, 0.24),
+    new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0, depthWrite: false })
+  );
+  buttonMesh.position.set(0.0, -0.45, 0.025);
   buttonMesh.userData.openLink = project.link;
   popupGroup.add(buttonMesh);
-  popupGroup.userData.button = buttonMesh;
-  popupGroup.userData.project = project;
+
+  [title, subtitle, body, buttonLabel].forEach(textMesh => {
+    if (textMesh) {
+      textMesh.material.opacity = 0.0;
+      textMesh.addEventListener('synccomplete', () => {
+        textMesh.material.depthWrite = false;
+      });
+      textMesh.sync();
+    }
+  });
+
+  buttonBackground.material.opacity = 0.0;
+  buttonOutline.material.opacity = 0.0;
+
+  popupGroup.userData = {
+    button: buttonMesh,
+    project,
+    panelUniforms: panelMaterial.uniforms,
+    buttonBackground,
+    buttonLabel,
+    buttonOutline,
+    textMeshes: [title, subtitle, body, buttonLabel].filter(Boolean),
+    tweens: [],
+  };
+
   popupGroup.visible = false;
   scene.add(popupGroup);
   return popupGroup;
@@ -353,6 +366,16 @@ const slowMotion = { value: 1 };
 
 function toggleSlowMotion(active) {
   gsap.to(slowMotion, { value: active ? 0.2 : 1, duration: 0.6, ease: 'sine.out' });
+}
+
+function clearPopupTweens(popup) {
+  if (!popup || !popup.userData || !popup.userData.tweens) return;
+  popup.userData.tweens.forEach(tween => {
+    if (tween) {
+      tween.kill();
+    }
+  });
+  popup.userData.tweens.length = 0;
 }
 
 function orientTowardsCenter(object) {
@@ -479,24 +502,112 @@ function openPopup(project) {
   activePopup = popup;
   popup.visible = true;
   toggleSlowMotion(true);
-  gsap.fromTo(popup.scale, { x: 0.8, y: 0.8, z: 0.8 }, { x: 1, y: 1, z: 1, duration: 0.6, ease: 'expo.out' });
+  clearPopupTweens(popup);
+
+  popup.scale.setScalar(1);
+  const { panelUniforms, buttonBackground, buttonOutline, textMeshes } = popup.userData;
+  panelUniforms.uAlpha.value = 0;
+  panelUniforms.uGlow.value = 0;
+  buttonBackground.material.opacity = 0.0;
+  buttonOutline.material.opacity = 0.0;
+  textMeshes.forEach(mesh => {
+    mesh.material.opacity = 0.0;
+  });
+
+  const scaleTween = gsap.fromTo(
+    popup.scale,
+    { x: 0.82, y: 0.82, z: 0.82 },
+    { x: 1, y: 1, z: 1, duration: 0.6, ease: 'expo.out' }
+  );
+  const panelFade = gsap.to(panelUniforms.uAlpha, {
+    value: 1,
+    duration: 0.55,
+    ease: 'sine.out',
+  });
+  const glowLoop = gsap.to(panelUniforms.uGlow, {
+    value: 0.9,
+    duration: 1.8,
+    ease: 'sine.inOut',
+    yoyo: true,
+    repeat: -1,
+  });
+  const buttonPulse = gsap.to(buttonBackground.material, {
+    opacity: 0.42,
+    duration: 1.2,
+    ease: 'sine.inOut',
+    yoyo: true,
+    repeat: -1,
+  });
+  const outlinePulse = gsap.to(buttonOutline.material, {
+    opacity: 0.7,
+    duration: 1.2,
+    ease: 'sine.inOut',
+    yoyo: true,
+    repeat: -1,
+  });
+  const textFade = gsap.to(
+    textMeshes.map(mesh => mesh.material),
+    {
+      opacity: 1,
+      duration: 0.6,
+      ease: 'sine.out',
+      stagger: 0.08,
+    }
+  );
+
+  popup.userData.tweens.push(scaleTween, panelFade, glowLoop, buttonPulse, outlinePulse, textFade);
 }
 
 function closePopup() {
   if (!activePopup) return;
   const popup = activePopup;
   activePopup = null;
-  gsap.to(popup.scale, {
-    x: 0.6,
-    y: 0.6,
-    z: 0.6,
-    duration: 0.4,
+  clearPopupTweens(popup);
+
+  const { panelUniforms, buttonBackground, buttonOutline, textMeshes } = popup.userData;
+
+  const fadeOutPanel = gsap.to(panelUniforms.uAlpha, {
+    value: 0,
+    duration: 0.35,
+    ease: 'expo.in',
+    onComplete: () => {
+      panelUniforms.uGlow.value = 0;
+    },
+  });
+  const fadeTexts = gsap.to(
+    textMeshes.map(mesh => mesh.material),
+    {
+      opacity: 0,
+      duration: 0.25,
+      ease: 'expo.in',
+    }
+  );
+  const fadeButton = gsap.to(buttonBackground.material, {
+    opacity: 0,
+    duration: 0.3,
+    ease: 'sine.in',
+  });
+  const fadeOutline = gsap.to(buttonOutline.material, {
+    opacity: 0,
+    duration: 0.3,
+    ease: 'sine.in',
+  });
+  const scaleTween = gsap.to(popup.scale, {
+    x: 0.7,
+    y: 0.7,
+    z: 0.7,
+    duration: 0.35,
     ease: 'expo.in',
     onComplete: () => {
       popup.visible = false;
       popup.scale.setScalar(1);
+      popup.userData.textMeshes.forEach(mesh => {
+        mesh.material.opacity = 0.0;
+      });
     },
   });
+
+  popup.userData.tweens.push(fadeOutPanel, fadeTexts, fadeButton, fadeOutline, scaleTween);
   toggleSlowMotion(false);
 }
 
