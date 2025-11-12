@@ -25,7 +25,6 @@ const pivot = new THREE.Object3D();
 cameraHolder.add(pivot);
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 60);
 pivot.add(camera);
-console.log(camera);
 const composer = new EffectComposer(renderer);
 const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
@@ -202,288 +201,48 @@ function fibonacciSphere(index, total, radius) {
   );
 }
 
-const popupPanelVertexShader = /* glsl */ `
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-const popupPanelFragmentShader = /* glsl */ `
-  varying vec2 vUv;
-  uniform vec3 uColorTop;
-  uniform vec3 uColorBottom;
-  uniform vec3 uAccent;
-  uniform float uAlpha;
-  uniform float uGlow;
-
-  void main() {
-    vec2 uv = vUv;
-    float rim = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
-    float border = smoothstep(0.06, 0.0, rim);
-    float glowRing = smoothstep(0.18, 0.0, abs(uv.y - 0.8));
-    vec3 base = mix(uColorBottom, uColorTop, pow(uv.y, 1.1));
-    base = mix(base, uAccent, border * 0.5 + glowRing * uGlow * 0.4);
-    float alpha = uAlpha * (0.78 + border * 0.2);
-    if (alpha <= 0.01) discard;
-    gl_FragColor = vec4(base, alpha);
-  }
-`;
-
-function createPopupPanelMaterial() {
-  return new THREE.ShaderMaterial({
-    transparent: true,
-    depthWrite: false,
-    uniforms: {
-      uColorTop: { value: new THREE.Color(0x433580) },
-      uColorBottom: { value: new THREE.Color(0x0b051a) },
-      uAccent: { value: new THREE.Color(0x8fc0ff) },
-      uAlpha: { value: 0.0 },
-      uGlow: { value: 0.0 },
-    },
-    vertexShader: popupPanelVertexShader,
-    fragmentShader: popupPanelFragmentShader,
+function createHTMLPopup(project) {
+  const popup = document.createElement('div');
+  popup.className = 'popup-container';
+  popup.id = `popup-${project.id}`;
+  
+  popup.innerHTML = `
+    <div class="popup-glass">
+      <div class="popup-content">
+        <h2 class="popup-title">${project.name}</h2>
+        ${project.subtitle ? `<h3 class="popup-subtitle">${project.subtitle}</h3>` : ''}
+        <p class="popup-description">${project.description}</p>
+        <button class="popup-button" data-link="${project.link}">
+          <span>Voir sur GitHub</span>
+        </button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(popup);
+  
+  const button = popup.querySelector('.popup-button');
+  button.addEventListener('click', (e) => {
+    e.stopPropagation();
+    window.open(project.link, '_blank');
   });
-}
-
-function createTextLabel({
-  text,
-  fontSize = 72,
-  lineHeight = 1.25,
-  color = '#ffffff',
-  align = 'left',
-  fontFamily = '"Segoe UI", "Montserrat", sans-serif',
-  paddingX = 70,
-  paddingY = 50,
-  canvasWidth = 1400,
-  targetWidth = 1.55,
-}) {
-  const canvas = document.createElement('canvas');
-  canvas.width = canvasWidth;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = color;
-  ctx.font = `${fontSize}px ${fontFamily}`;
-  ctx.textAlign = align;
-  ctx.textBaseline = 'top';
-
-  const words = text.split(' ');
-  const lines = [];
-  const maxLineWidth = canvasWidth - paddingX * 2;
-  let currentLine = '';
-  words.forEach(word => {
-    const tentative = currentLine ? `${currentLine} ${word}` : word;
-    const metrics = ctx.measureText(tentative);
-    if (metrics.width > maxLineWidth && currentLine.length) {
-      lines.push(currentLine);
-      currentLine = word;
-    } else {
-      currentLine = tentative;
+  
+  popup.addEventListener('click', (e) => {
+    if (e.target === popup || e.target.classList.contains('popup-glass')) {
+      closePopup();
     }
   });
-  if (currentLine.length) {
-    lines.push(currentLine);
-  }
-
-  const lineHeightPx = fontSize * lineHeight;
-  const totalHeight = Math.ceil(lines.length * lineHeightPx + paddingY * 2);
-  canvas.height = totalHeight;
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = color;
-  ctx.font = `${fontSize}px ${fontFamily}`;
-  ctx.textAlign = align;
-  ctx.textBaseline = 'top';
-  const drawX =
-    align === 'center' ? canvas.width / 2 : align === 'right' ? canvas.width - paddingX : paddingX;
-  lines.forEach((line, index) => {
-    ctx.fillText(line, drawX, paddingY + index * lineHeightPx);
-  });
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.minFilter = THREE.LinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy?.() || 8);
-
-  const aspect = canvas.height / canvas.width;
-  const height = targetWidth * aspect;
-  const geometry = new THREE.PlaneGeometry(targetWidth, height);
-  const material = new THREE.MeshBasicMaterial({
-    map: texture,
-    transparent: true,
-    depthWrite: false,
-    opacity: 0,
-  });
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.renderOrder = 11;
-
-  return { mesh, material, width: targetWidth, height };
-}
-
-function createPopup(project) {
-  const popupGroup = new THREE.Group();
-  popupGroup.name = `popup-${project.id}`;
-
-  const panelMaterial = createPopupPanelMaterial();
-  const panel = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.1), panelMaterial);
-  panel.renderOrder = 10;
-  panel.layers.enable(1);
-  popupGroup.add(panel);
-
-  const panelWidth = 1.9;
-  const halfPanelWidth = panelWidth / 2;
-  const panelHeight = 1.1;
-  const topMargin = 0.18;
-  const leftMargin = 0.18;
-  const contentZ = 0.02;
-
-  let cursorY = panelHeight / 2 - topMargin;
-  const textMaterials = [];
-
-  const titleLabel = createTextLabel({
-    text: project.name,
-    fontSize: 86,
-    lineHeight: 1.08,
-    color: '#f3f6ff',
-    canvasWidth: 1500,
-    paddingX: 90,
-    paddingY: 60,
-    targetWidth: 1.52,
-  });
-  titleLabel.mesh.position.set(
-    -halfPanelWidth + leftMargin + titleLabel.width / 2,
-    cursorY - titleLabel.height / 2,
-    contentZ
-  );
-  popupGroup.add(titleLabel.mesh);
-  textMaterials.push(titleLabel.material);
-  cursorY -= titleLabel.height + 0.07;
-
-  if (project.subtitle) {
-    const subtitleLabel = createTextLabel({
-      text: project.subtitle,
-      fontSize: 52,
-      lineHeight: 1.1,
-      color: '#9fd0ff',
-      canvasWidth: 1300,
-      paddingX: 90,
-      paddingY: 40,
-      targetWidth: 1.45,
-    });
-    subtitleLabel.mesh.position.set(
-      -halfPanelWidth + leftMargin + subtitleLabel.width / 2,
-      cursorY - subtitleLabel.height / 2,
-      contentZ
-    );
-    popupGroup.add(subtitleLabel.mesh);
-    textMaterials.push(subtitleLabel.material);
-    cursorY -= subtitleLabel.height + 0.08;
-  }
-
-  const bodyLabel = createTextLabel({
-    text: project.description,
-    fontSize: 48,
-    lineHeight: 1.45,
-    color: '#c6d6ff',
-    canvasWidth: 1500,
-    paddingX: 90,
-    paddingY: 50,
-    targetWidth: 1.52,
-  });
-  bodyLabel.mesh.position.set(
-    -halfPanelWidth + leftMargin + bodyLabel.width / 2,
-    cursorY - bodyLabel.height / 2,
-    contentZ
-  );
-  popupGroup.add(bodyLabel.mesh);
-  textMaterials.push(bodyLabel.material);
-
-  const buttonBackground = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.85, 0.24),
-    new THREE.MeshBasicMaterial({
-      color: 0x7ab8ff,
-      transparent: true,
-      opacity: 0.22,
-      depthWrite: false,
-    })
-  );
-  buttonBackground.position.set(0.0, -0.45, 0.01);
-  buttonBackground.layers.enable(1);
-  popupGroup.add(buttonBackground);
-
-  const buttonOutline = new THREE.LineSegments(
-    new THREE.EdgesGeometry(new THREE.PlaneGeometry(0.85, 0.24)),
-    new THREE.LineBasicMaterial({
-      color: 0xb3d9ff,
-      transparent: true,
-      opacity: 0.55,
-      depthWrite: false,
-    })
-  );
-  buttonOutline.position.set(0.0, -0.45, 0.012);
-  buttonOutline.layers.enable(1);
-  popupGroup.add(buttonOutline);
-
-  const buttonLabel = createTextLabel({
-    text: 'Voir sur GitHub',
-    fontSize: 56,
-    lineHeight: 1.0,
-    color: '#e7f4ff',
-    canvasWidth: 1024,
-    paddingX: 40,
-    paddingY: 36,
-    targetWidth: 0.7,
-    align: 'center',
-  });
-  buttonLabel.mesh.position.set(0.0, -0.45, 0.02);
-  popupGroup.add(buttonLabel.mesh);
-  textMaterials.push(buttonLabel.material);
-
-  const buttonMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.85, 0.24),
-    new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0, depthWrite: false })
-  );
-  buttonMesh.position.set(0.0, -0.45, 0.025);
-  buttonMesh.userData.openLink = project.link;
-  popupGroup.add(buttonMesh);
-
-  buttonBackground.material.opacity = 0.0;
-  buttonOutline.material.opacity = 0.0;
-
-  popupGroup.userData = {
-    button: buttonMesh,
-    project,
-    panelUniforms: panelMaterial.uniforms,
-    buttonBackground,
-    buttonOutline,
-    textMaterials,
-    tweens: [],
-  };
-
-  popupGroup.visible = false;
-  scene.add(popupGroup);
-  return popupGroup;
+  
+  return popup;
 }
 
 const popups = new Map();
 let activePopup = null;
-const popupRaycaster = new THREE.Raycaster();
 
 const slowMotion = { value: 1 };
 
 function toggleSlowMotion(active) {
   gsap.to(slowMotion, { value: active ? 0.2 : 1, duration: 0.6, ease: 'sine.out' });
-}
-
-function clearPopupTweens(popup) {
-  if (!popup || !popup.userData || !popup.userData.tweens) return;
-  popup.userData.tweens.forEach(tween => {
-    if (tween) {
-      tween.kill();
-    }
-  });
-  popup.userData.tweens.length = 0;
 }
 
 function orientTowardsCenter(object) {
@@ -505,11 +264,28 @@ async function loadProjects() {
     const meshes = [];
     asset.traverse(node => {
       if (node.isMesh) {
-        node.material = node.material.clone();
-        node.material.emissive = node.material.emissive || new THREE.Color(0x101026);
-        node.material.emissiveIntensity = 0.35;
-      node.material.metalness = Math.min(node.material.metalness ?? 0.25, 0.35);
-      node.material.roughness = Math.min(node.material.roughness ?? 0.85, 0.9);
+        // Préserver les matériaux originaux du GLTF sans les modifier
+        if (node.material) {
+          const originalMaterial = node.material;
+          // Si c'est un tableau de matériaux, prendre le premier
+          const mat = Array.isArray(originalMaterial) ? originalMaterial[0] : originalMaterial;
+          // Cloner seulement le matériau, pas les textures (elles sont déjà chargées)
+          node.material = mat.clone();
+          // Référencer les textures originales (ne pas cloner pour préserver les couleurs)
+          if (mat.map) node.material.map = mat.map;
+          if (mat.normalMap) node.material.normalMap = mat.normalMap;
+          if (mat.emissiveMap) node.material.emissiveMap = mat.emissiveMap;
+          if (mat.roughnessMap) node.material.roughnessMap = mat.roughnessMap;
+          if (mat.metalnessMap) node.material.metalnessMap = mat.metalnessMap;
+          if (mat.aoMap) node.material.aoMap = mat.aoMap;
+          // S'assurer que le matériau est mis à jour
+          node.material.needsUpdate = true;
+          // Ajustements très légers pour la visibilité sans altérer les couleurs
+          if (!node.material.emissive || node.material.emissive.equals(new THREE.Color(0x000000))) {
+            node.material.emissive = new THREE.Color(0x000000);
+          }
+          node.material.emissiveIntensity = 0.1;
+        }
         meshes.push(node);
       }
     });
@@ -542,7 +318,7 @@ async function loadProjects() {
     projectTargets.push(anchor);
     scene.add(anchor);
 
-    const popup = createPopup(project);
+    const popup = createHTMLPopup(project);
     popups.set(project.id, popup);
 
     return anchor;
@@ -594,16 +370,7 @@ let currentTarget = null;
 
 function handleSelection() {
   if (activePopup) {
-    const dir = new THREE.Vector3();
-    camera.getWorldDirection(dir);
-    popupRaycaster.set(camera.getWorldPosition(new THREE.Vector3()), dir);
-    const popup = activePopup;
-    const intersections = popupRaycaster.intersectObjects([popup.userData.button], true);
-    if (intersections.length > 0 && intersections[0].object.userData.openLink) {
-      window.open(intersections[0].object.userData.openLink, '_blank');
-    } else {
-      closePopup();
-    }
+    closePopup();
     return;
   }
   if (currentTarget) {
@@ -615,109 +382,71 @@ function openPopup(project) {
   const popup = popups.get(project.id);
   if (!popup) return;
   activePopup = popup;
-  popup.visible = true;
   toggleSlowMotion(true);
-  clearPopupTweens(popup);
-
-  popup.scale.setScalar(1);
-  const { panelUniforms, buttonBackground, buttonOutline, textMaterials } = popup.userData;
-  panelUniforms.uAlpha.value = 0;
-  panelUniforms.uGlow.value = 0;
-  buttonBackground.material.opacity = 0.0;
-  buttonOutline.material.opacity = 0.0;
-  textMaterials.forEach(material => {
-    material.opacity = 0.0;
-  });
-
-  const scaleTween = gsap.fromTo(
-    popup.scale,
-    { x: 0.82, y: 0.82, z: 0.82 },
-    { x: 1, y: 1, z: 1, duration: 0.6, ease: 'expo.out' }
+  
+  popup.style.display = 'flex';
+  popup.style.opacity = '0';
+  
+  const glass = popup.querySelector('.popup-glass');
+  const title = popup.querySelector('.popup-title');
+  const subtitle = popup.querySelector('.popup-subtitle');
+  const description = popup.querySelector('.popup-description');
+  const button = popup.querySelector('.popup-button');
+  
+  gsap.fromTo(popup, 
+    { opacity: 0, scale: 0.9 },
+    { opacity: 1, scale: 1, duration: 0.5, ease: 'expo.out' }
   );
-  const panelFade = gsap.to(panelUniforms.uAlpha, {
-    value: 1,
-    duration: 0.55,
-    ease: 'sine.out',
-  });
-  const glowLoop = gsap.to(panelUniforms.uGlow, {
-    value: 0.9,
-    duration: 1.8,
-    ease: 'sine.inOut',
-    yoyo: true,
-    repeat: -1,
-  });
-  const buttonPulse = gsap.to(buttonBackground.material, {
-    opacity: 0.42,
-    duration: 1.2,
-    ease: 'sine.inOut',
-    yoyo: true,
-    repeat: -1,
-  });
-  const outlinePulse = gsap.to(buttonOutline.material, {
-    opacity: 0.7,
-    duration: 1.2,
-    ease: 'sine.inOut',
-    yoyo: true,
-    repeat: -1,
-  });
-  const textFade = gsap.to(textMaterials, {
-    opacity: 1,
-    duration: 0.6,
-    ease: 'sine.out',
-    stagger: 0.08,
-  });
-
-  popup.userData.tweens.push(scaleTween, panelFade, glowLoop, buttonPulse, outlinePulse, textFade);
+  
+  gsap.fromTo(glass,
+    { backdropFilter: 'blur(0px)', WebkitBackdropFilter: 'blur(0px)' },
+    { backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', duration: 0.6, ease: 'sine.out' }
+  );
+  
+  if (title) {
+    gsap.fromTo(title,
+      { opacity: 0, y: -20 },
+      { opacity: 1, y: 0, duration: 0.6, ease: 'expo.out', delay: 0.1 }
+    );
+  }
+  
+  if (subtitle) {
+    gsap.fromTo(subtitle,
+      { opacity: 0, y: -15 },
+      { opacity: 1, y: 0, duration: 0.5, ease: 'expo.out', delay: 0.2 }
+    );
+  }
+  
+  if (description) {
+    gsap.fromTo(description,
+      { opacity: 0, y: 10 },
+      { opacity: 1, y: 0, duration: 0.6, ease: 'expo.out', delay: 0.3 }
+    );
+  }
+  
+  if (button) {
+    gsap.fromTo(button,
+      { opacity: 0, y: 15, scale: 0.95 },
+      { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: 'expo.out', delay: 0.4 }
+    );
+  }
 }
 
 function closePopup() {
   if (!activePopup) return;
   const popup = activePopup;
   activePopup = null;
-  clearPopupTweens(popup);
-
-  const { panelUniforms, buttonBackground, buttonOutline, textMaterials } = popup.userData;
-
-  const fadeOutPanel = gsap.to(panelUniforms.uAlpha, {
-    value: 0,
-    duration: 0.35,
-    ease: 'expo.in',
-    onComplete: () => {
-      panelUniforms.uGlow.value = 0;
-    },
-  });
-  const fadeTexts = gsap.to(textMaterials, {
-    opacity: 0,
-    duration: 0.25,
-    ease: 'expo.in',
-  });
-  const fadeButton = gsap.to(buttonBackground.material, {
-    opacity: 0,
-    duration: 0.3,
-    ease: 'sine.in',
-  });
-  const fadeOutline = gsap.to(buttonOutline.material, {
-    opacity: 0,
-    duration: 0.3,
-    ease: 'sine.in',
-  });
-  const scaleTween = gsap.to(popup.scale, {
-    x: 0.7,
-    y: 0.7,
-    z: 0.7,
-    duration: 0.35,
-    ease: 'expo.in',
-    onComplete: () => {
-      popup.visible = false;
-      popup.scale.setScalar(1);
-      textMaterials.forEach(material => {
-        material.opacity = 0.0;
-      });
-    },
-  });
-
-  popup.userData.tweens.push(fadeOutPanel, fadeTexts, fadeButton, fadeOutline, scaleTween);
   toggleSlowMotion(false);
+  
+  gsap.to(popup, {
+    opacity: 0,
+    scale: 0.95,
+    duration: 0.3,
+    ease: 'expo.in',
+    onComplete: () => {
+      popup.style.display = 'none';
+    }
+  });
 }
 
 function setFocus(target) {
@@ -806,13 +535,6 @@ function animate() {
       }
     }
     setFocus(target);
-  }
-
-  if (activePopup) {
-    const dir = camera.getWorldDirection(tempDir);
-    const origin = camera.getWorldPosition(tempPos.set(0, 0, 0));
-    activePopup.position.copy(origin).add(dir.multiplyScalar(1.6));
-    activePopup.quaternion.copy(camera.quaternion);
   }
 
   composer.render();
