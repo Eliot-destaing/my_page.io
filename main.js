@@ -17,7 +17,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x0a0416, 0.06);
+scene.fog = new THREE.FogExp2(0x0a0416, 0.045);
 
 const cameraHolder = new THREE.Object3D();
 scene.add(cameraHolder);
@@ -41,12 +41,15 @@ composer.addPass(vignettePass);
 
 const ambient = new THREE.AmbientLight(0x6c7ba5, 0.6);
 scene.add(ambient);
-const keyLight = new THREE.PointLight(0x86a2ff, 1.3, 25, 1.8);
+const keyLight = new THREE.PointLight(0x86a2ff, 1.45, 28, 1.6);
 keyLight.position.set(4, 3, 3);
 scene.add(keyLight);
 const rimLight = new THREE.PointLight(0xff9fd5, 0.9, 25, 2.0);
 rimLight.position.set(-3, -4, -2);
 scene.add(rimLight);
+const fillLight = new THREE.PointLight(0x94b8ff, 0.8, 30, 1.4);
+fillLight.position.set(0, 2, -4.5);
+scene.add(fillLight);
 
 const nebulaUniforms = {
   uTime: { value: 0 },
@@ -505,6 +508,8 @@ async function loadProjects() {
         node.material = node.material.clone();
         node.material.emissive = node.material.emissive || new THREE.Color(0x101026);
         node.material.emissiveIntensity = 0.35;
+      node.material.metalness = Math.min(node.material.metalness ?? 0.25, 0.35);
+      node.material.roughness = Math.min(node.material.roughness ?? 0.85, 0.9);
         meshes.push(node);
       }
     });
@@ -512,8 +517,13 @@ async function loadProjects() {
     normalizeModel(asset, targetVisualSize);
     anchor.add(asset);
 
-    const radius = 4.2;
-    const pos = fibonacciSphere(index, projectsData.length, radius);
+    let pos;
+    if (projectsData.length === 1) {
+      pos = new THREE.Vector3(0, 0, -4.5);
+    } else {
+      const radius = 4.2;
+      pos = fibonacciSphere(index, projectsData.length, radius);
+    }
     anchor.position.copy(pos);
     orientTowardsCenter(anchor);
 
@@ -745,6 +755,15 @@ const tempDir = new THREE.Vector3();
 const tempPos = new THREE.Vector3();
 const clock = new THREE.Clock();
 
+function alignCameraToTarget(position) {
+  const dir = position.clone().normalize();
+  const yaw = Math.atan2(dir.x, -dir.z);
+  const pitch = Math.atan2(dir.y, Math.sqrt(dir.x * dir.x + dir.z * dir.z));
+  cameraAngles.yaw = yaw;
+  cameraAngles.pitch = THREE.MathUtils.clamp(pitch, -Math.PI / 2 + 0.1, Math.PI / 2 - 0.1);
+  pivot.rotation.set(cameraAngles.pitch, cameraAngles.yaw, 0, 'YXZ');
+}
+
 function animate() {
   requestAnimationFrame(animate);
   const delta = clock.getDelta() * slowMotion.value;
@@ -811,6 +830,10 @@ window.addEventListener('resize', onResize);
 
 async function bootstrap() {
   await loadProjects();
+  if (projectAnchors.length) {
+    alignCameraToTarget(projectAnchors[0].position);
+    setFocus(projectAnchors[0]);
+  }
   animate();
 }
 
