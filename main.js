@@ -278,40 +278,9 @@ async function loadProjects() {
     const asset = gltf.scene;
     const meshes = [];
     
-    // Utiliser MeshBasicMaterial pour afficher les couleurs directement sans dépendre de l'éclairage
+    // Charger simplement le modèle sans modifier les matériaux
     asset.traverse(node => {
       if (node.isMesh) {
-        const originalMat = node.material;
-        
-        // Gérer les tableaux de matériaux
-        if (Array.isArray(originalMat)) {
-          node.material = originalMat.map(mat => {
-            return new THREE.MeshBasicMaterial({
-              color: mat?.color?.getHex() || 0x888888,
-              map: mat?.map || null,
-              transparent: mat?.transparent || false,
-              opacity: mat?.opacity || 1.0,
-            });
-          });
-        } else if (originalMat) {
-          // Extraire la couleur et la texture du matériau original
-          const color = originalMat.color ? originalMat.color.getHex() : 0x888888;
-          const map = originalMat.map || null;
-          
-          // Créer un MeshBasicMaterial qui affiche les couleurs directement
-          node.material = new THREE.MeshBasicMaterial({
-            color: color,
-            map: map,
-            transparent: originalMat.transparent || false,
-            opacity: originalMat.opacity || 1.0,
-          });
-        } else {
-          // Matériau par défaut si aucun matériau
-          node.material = new THREE.MeshBasicMaterial({
-            color: 0x888888,
-          });
-        }
-        
         meshes.push(node);
       }
     });
