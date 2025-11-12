@@ -25,7 +25,7 @@ const pivot = new THREE.Object3D();
 cameraHolder.add(pivot);
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 60);
 pivot.add(camera);
-
+console.log(camera);
 const composer = new EffectComposer(renderer);
 const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
