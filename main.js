@@ -29,11 +29,12 @@ pivot.add(camera);
 const composer = new EffectComposer(renderer);
 const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
-const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.8, 0.6, 0.85);
-bloomPass.threshold = 0.2;
-bloomPass.strength = 0.9;
-bloomPass.radius = 0.5;
-composer.addPass(bloomPass);
+// Bloom désactivé pour ne pas rendre les objets trop lumineux
+// const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.8, 0.6, 0.85);
+// bloomPass.threshold = 0.2;
+// bloomPass.strength = 0.9;
+// bloomPass.radius = 0.5;
+// composer.addPass(bloomPass);
 const vignettePass = new ShaderPass(VignetteShader);
 vignettePass.uniforms['offset'].value = 1.05;
 vignettePass.uniforms['darkness'].value = 1.25;
@@ -526,13 +527,14 @@ function animate() {
     const float = Math.sin(clock.elapsedTime * 0.6 + anchor.userData.floatOffset) * 0.1;
     asset.position.y = float;
     asset.position.z = Math.cos(clock.elapsedTime * 0.4 + anchor.userData.floatOffset) * 0.05;
-    anchor.userData.meshes.forEach(mesh => {
-      if (anchor.userData.highlight) {
-        mesh.layers.enable(1);
-      } else {
-        mesh.layers.disable(1);
-      }
-    });
+    // Layers désactivés pour ne pas ajouter d'effets lumineux
+    // anchor.userData.meshes.forEach(mesh => {
+    //   if (anchor.userData.highlight) {
+    //     mesh.layers.enable(1);
+    //   } else {
+    //     mesh.layers.disable(1);
+    //   }
+    // });
   });
 
   if (!activePopup && projectTargets.length) {
