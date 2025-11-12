@@ -264,27 +264,23 @@ async function loadProjects() {
     const meshes = [];
     asset.traverse(node => {
       if (node.isMesh) {
-        // Préserver les matériaux originaux du GLTF sans les modifier
+        // Utiliser directement les matériaux originaux du GLTF sans modification
         if (node.material) {
           const originalMaterial = node.material;
-          // Si c'est un tableau de matériaux, prendre le premier
-          const mat = Array.isArray(originalMaterial) ? originalMaterial[0] : originalMaterial;
-          // Cloner seulement le matériau, pas les textures (elles sont déjà chargées)
-          node.material = mat.clone();
-          // Référencer les textures originales (ne pas cloner pour préserver les couleurs)
-          if (mat.map) node.material.map = mat.map;
-          if (mat.normalMap) node.material.normalMap = mat.normalMap;
-          if (mat.emissiveMap) node.material.emissiveMap = mat.emissiveMap;
-          if (mat.roughnessMap) node.material.roughnessMap = mat.roughnessMap;
-          if (mat.metalnessMap) node.material.metalnessMap = mat.metalnessMap;
-          if (mat.aoMap) node.material.aoMap = mat.aoMap;
-          // S'assurer que le matériau est mis à jour
-          node.material.needsUpdate = true;
-          // Ajustements très légers pour la visibilité sans altérer les couleurs
-          if (!node.material.emissive || node.material.emissive.equals(new THREE.Color(0x000000))) {
-            node.material.emissive = new THREE.Color(0x000000);
+          // Si c'est un tableau de matériaux, utiliser tous les matériaux
+          if (Array.isArray(originalMaterial)) {
+            node.material = originalMaterial.map(mat => {
+              // Ne pas cloner, utiliser directement pour préserver toutes les propriétés
+              if (mat.map) mat.map.needsUpdate = true;
+              mat.needsUpdate = true;
+              return mat;
+            });
+          } else {
+            // Utiliser le matériau directement sans cloner
+            if (originalMaterial.map) originalMaterial.map.needsUpdate = true;
+            originalMaterial.needsUpdate = true;
+            node.material = originalMaterial;
           }
-          node.material.emissiveIntensity = 0.1;
         }
         meshes.push(node);
       }
@@ -340,10 +336,8 @@ function updateCameraRotation(dx, dy) {
 document.addEventListener('pointerlockchange', () => {
   pointerLocked = document.pointerLockElement === renderer.domElement;
   document.body.classList.toggle('pointerlocked', pointerLocked);
-  if (!pointerLocked && activePopup) {
-    // keep pointer lock active while popup shows, if user escapes we close popup
-    closePopup();
-  }
+  // Ne pas fermer la popup si elle est ouverte, on veut juste désactiver le pointer lock
+  // La popup sera fermée manuellement par l'utilisateur
 });
 
 renderer.domElement.addEventListener('click', () => {
@@ -384,6 +378,14 @@ function openPopup(project) {
   activePopup = popup;
   toggleSlowMotion(true);
   
+  // Désactiver le pointer lock pour permettre les clics normaux
+  if (document.pointerLockElement === renderer.domElement) {
+    document.exitPointerLock();
+  }
+  
+  // Ajouter la classe pour désactiver les interactions avec le canvas
+  document.body.classList.add('popup-open');
+  
   popup.style.display = 'flex';
   popup.style.opacity = '0';
   
@@ -393,14 +395,13 @@ function openPopup(project) {
   const description = popup.querySelector('.popup-description');
   const button = popup.querySelector('.popup-button');
   
+  // Le backdrop-filter est déjà défini dans le CSS, pas besoin de l'animer avec GSAP
+  glass.style.backdropFilter = 'blur(20px) saturate(180%)';
+  glass.style.webkitBackdropFilter = 'blur(20px) saturate(180%)';
+  
   gsap.fromTo(popup, 
     { opacity: 0, scale: 0.9 },
     { opacity: 1, scale: 1, duration: 0.5, ease: 'expo.out' }
-  );
-  
-  gsap.fromTo(glass,
-    { backdropFilter: 'blur(0px)', WebkitBackdropFilter: 'blur(0px)' },
-    { backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', duration: 0.6, ease: 'sine.out' }
   );
   
   if (title) {
@@ -438,6 +439,9 @@ function closePopup() {
   activePopup = null;
   toggleSlowMotion(false);
   
+  // Retirer la classe pour réactiver les interactions avec le canvas
+  document.body.classList.remove('popup-open');
+  
   gsap.to(popup, {
     opacity: 0,
     scale: 0.95,
@@ -445,6 +449,10 @@ function closePopup() {
     ease: 'expo.in',
     onComplete: () => {
       popup.style.display = 'none';
+      // Réactiver le pointer lock après la fermeture
+      if (!document.pointerLockElement) {
+        renderer.domElement.requestPointerLock();
+      }
     }
   });
 }
