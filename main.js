@@ -11,7 +11,7 @@ const loadingOverlay = document.getElementById('loading');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.8; // Exposition réduite pour voir les formes
+renderer.toneMappingExposure = 1.0; // Exposition normale pour voir les couleurs
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
@@ -146,7 +146,7 @@ const projectsData = [
     id: 'semestre_bolivie',
     name: 'Semestre Bolivie',
     subtitle: 'Carnet d\'exploration à La Paz & Uyuni',
-    file: 'assets/models/semestre_bolivie.obj',
+    file: 'assets/models/semestre_bolivie.gltf',
     description:
       'Journal visuel de mission universitaire en Bolivie — immersion terrain, reportage photographique et narration sensible des communautés andines.',
     link: 'https://github.com/example/semestre-bolivie',
@@ -155,7 +155,7 @@ const projectsData = [
     id: 'retro_game_unity',
     name: 'Retro Game Unity',
     subtitle: 'Jeu Unity style années 90',
-    file: 'assets/models/retro_game_unity.obj',
+    file: 'assets/models/retro_game_unity.gltf',
     description:
       'Jeu Unity inspiré des consoles 90s avec shaders CRT, scoring arcade et animations low-poly.',
     link: 'https://github.com/example/retro-game-unity',
@@ -166,7 +166,7 @@ const manager = new THREE.LoadingManager();
 manager.onLoad = () => {
   loadingOverlay.classList.add('hidden');
 };
-const loader = new OBJLoader(manager);
+const loader = new GLTFLoader(manager);
 manager.onProgress = (url, loaded, total) => {
   if (!loadingOverlay.classList.contains('hidden')) {
     loadingOverlay.textContent = `Chargement des artefacts ${loaded} / ${total}`;
@@ -271,24 +271,46 @@ function orientTowardsCenter(object) {
 
 async function loadProjects() {
   const promises = projectsData.map(async (project, index) => {
-    const obj = await loader.loadAsync(project.file);
+    const gltf = await loader.loadAsync(project.file);
     const anchor = new THREE.Group();
     anchor.name = project.name;
-    const asset = obj;
+    const asset = gltf.scene;
     const meshes = [];
     
-    // Ajouter un matériau simple et visible pour les objets OBJ
+    // Utiliser MeshBasicMaterial pour afficher les couleurs directement sans dépendre de l'éclairage
     asset.traverse(node => {
       if (node.isMesh) {
-        // Préserver la couleur originale si elle existe
-        const originalColor = node.material?.color || 0x888888;
-        // Créer un matériau qui préserve les couleurs et soit visible
-        node.material = new THREE.MeshStandardMaterial({
-          color: originalColor,
-          metalness: 0.1,
-          roughness: 0.7,
-          flatShading: false,
-        });
+        const originalMat = node.material;
+        
+        // Gérer les tableaux de matériaux
+        if (Array.isArray(originalMat)) {
+          node.material = originalMat.map(mat => {
+            return new THREE.MeshBasicMaterial({
+              color: mat?.color?.getHex() || 0x888888,
+              map: mat?.map || null,
+              transparent: mat?.transparent || false,
+              opacity: mat?.opacity || 1.0,
+            });
+          });
+        } else if (originalMat) {
+          // Extraire la couleur et la texture du matériau original
+          const color = originalMat.color ? originalMat.color.getHex() : 0x888888;
+          const map = originalMat.map || null;
+          
+          // Créer un MeshBasicMaterial qui affiche les couleurs directement
+          node.material = new THREE.MeshBasicMaterial({
+            color: color,
+            map: map,
+            transparent: originalMat.transparent || false,
+            opacity: originalMat.opacity || 1.0,
+          });
+        } else {
+          // Matériau par défaut si aucun matériau
+          node.material = new THREE.MeshBasicMaterial({
+            color: 0x888888,
+          });
+        }
+        
         meshes.push(node);
       }
     });
