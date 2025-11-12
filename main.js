@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
@@ -11,7 +11,7 @@ const loadingOverlay = document.getElementById('loading');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.5; // Exposition augmentée pour mieux voir les couleurs
+renderer.toneMappingExposure = 0.8; // Exposition réduite pour voir les formes
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
@@ -38,18 +38,15 @@ vignettePass.uniforms['offset'].value = 1.05;
 vignettePass.uniforms['darkness'].value = 1.25;
 composer.addPass(vignettePass);
 
-// Éclairage amélioré pour mieux voir les couleurs des objets
-const ambient = new THREE.AmbientLight(0xffffff, 1.2);
+// Éclairage réduit pour voir les formes et couleurs
+const ambient = new THREE.AmbientLight(0xffffff, 0.4);
 scene.add(ambient);
-const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
+const keyLight = new THREE.DirectionalLight(0xffffff, 0.6);
 keyLight.position.set(5, 5, 5);
 scene.add(keyLight);
-const fillLight = new THREE.DirectionalLight(0xffffff, 0.8);
+const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
 fillLight.position.set(-5, 3, -5);
 scene.add(fillLight);
-const backLight = new THREE.DirectionalLight(0xffffff, 0.6);
-backLight.position.set(0, 0, 5);
-scene.add(backLight);
 
 const nebulaUniforms = {
   uTime: { value: 0 },
@@ -149,7 +146,7 @@ const projectsData = [
     id: 'semestre_bolivie',
     name: 'Semestre Bolivie',
     subtitle: 'Carnet d\'exploration à La Paz & Uyuni',
-    file: 'assets/models/semestre_bolivie.gltf',
+    file: 'assets/models/semestre_bolivie.obj',
     description:
       'Journal visuel de mission universitaire en Bolivie — immersion terrain, reportage photographique et narration sensible des communautés andines.',
     link: 'https://github.com/example/semestre-bolivie',
@@ -158,7 +155,7 @@ const projectsData = [
     id: 'retro_game_unity',
     name: 'Retro Game Unity',
     subtitle: 'Jeu Unity style années 90',
-    file: 'assets/models/retro_game_unity.gltf',
+    file: 'assets/models/retro_game_unity.obj',
     description:
       'Jeu Unity inspiré des consoles 90s avec shaders CRT, scoring arcade et animations low-poly.',
     link: 'https://github.com/example/retro-game-unity',
@@ -169,7 +166,7 @@ const manager = new THREE.LoadingManager();
 manager.onLoad = () => {
   loadingOverlay.classList.add('hidden');
 };
-const loader = new GLTFLoader(manager);
+const loader = new OBJLoader(manager);
 manager.onProgress = (url, loaded, total) => {
   if (!loadingOverlay.classList.contains('hidden')) {
     loadingOverlay.textContent = `Chargement des artefacts ${loaded} / ${total}`;
@@ -274,19 +271,28 @@ function orientTowardsCenter(object) {
 
 async function loadProjects() {
   const promises = projectsData.map(async (project, index) => {
-    const gltf = await loader.loadAsync(project.file);
+    const obj = await loader.loadAsync(project.file);
     const anchor = new THREE.Group();
     anchor.name = project.name;
-    const asset = gltf.scene;
+    const asset = obj;
     const meshes = [];
-    // NE PAS TOUCHER AUX MATÉRIAUX - utiliser directement ce qui vient du GLTF
+    
+    // Ajouter un matériau simple et visible pour les objets OBJ
     asset.traverse(node => {
       if (node.isMesh) {
-        // Ne rien modifier, utiliser les matériaux tels quels
-        // Le GLTFLoader gère déjà correctement les textures et couleurs
+        // Préserver la couleur originale si elle existe
+        const originalColor = node.material?.color || 0x888888;
+        // Créer un matériau qui préserve les couleurs et soit visible
+        node.material = new THREE.MeshStandardMaterial({
+          color: originalColor,
+          metalness: 0.1,
+          roughness: 0.7,
+          flatShading: false,
+        });
         meshes.push(node);
       }
     });
+    
     const targetVisualSize = 1.8;
     normalizeModel(asset, targetVisualSize);
     anchor.add(asset);
