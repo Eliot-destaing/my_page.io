@@ -40,21 +40,30 @@ vignettePass.uniforms['offset'].value = 1.05;
 vignettePass.uniforms['darkness'].value = 1.25;
 composer.addPass(vignettePass);
 
-// Éclairage amélioré pour l'ambiance spatiale
-const ambient = new THREE.AmbientLight(0xffffff, 0.6); // Lumière blanche plus forte
+// Éclairage très lumineux pour toute la scène
+const ambient = new THREE.AmbientLight(0xffffff, 1.2); // Lumière ambiante très forte
 scene.add(ambient);
-const keyLight = new THREE.DirectionalLight(0xffffff, 1.0); // Lumière principale blanche
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.5); // Lumière principale très forte
 keyLight.position.set(5, 5, 5);
 scene.add(keyLight);
-const fillLight = new THREE.DirectionalLight(0xffffff, 0.6); // Lumière de remplissage
+const fillLight = new THREE.DirectionalLight(0xffffff, 1.0); // Lumière de remplissage forte
 fillLight.position.set(-5, 3, -5);
 scene.add(fillLight);
-const rimLight = new THREE.DirectionalLight(0x8a7ab8, 0.4); // Lumière d'ambiance violette
+const rimLight = new THREE.DirectionalLight(0xffffff, 0.8); // Lumière latérale
 rimLight.position.set(0, -5, -5);
 scene.add(rimLight);
-const accentLight = new THREE.DirectionalLight(0x6a5a9a, 0.3); // Accent coloré
+const accentLight = new THREE.DirectionalLight(0xffffff, 0.7); // Lumière d'accent
 accentLight.position.set(0, 5, 0);
 scene.add(accentLight);
+const backLight = new THREE.DirectionalLight(0xffffff, 0.6); // Lumière arrière
+backLight.position.set(0, 0, 5);
+scene.add(backLight);
+const sideLight1 = new THREE.DirectionalLight(0xffffff, 0.5); // Lumière latérale 1
+sideLight1.position.set(5, 0, 0);
+scene.add(sideLight1);
+const sideLight2 = new THREE.DirectionalLight(0xffffff, 0.5); // Lumière latérale 2
+sideLight2.position.set(-5, 0, 0);
+scene.add(sideLight2);
 
 const nebulaUniforms = {
   uTime: { value: 0 },
@@ -168,6 +177,24 @@ const projectsData = [
       'Jeu Unity inspiré des consoles 90s avec shaders CRT, scoring arcade et animations low-poly.',
     link: 'https://github.com/example/retro-game-unity',
   },
+  {
+    id: 'stage_ministere',
+    name: 'Stage Ministère des Armées',
+    subtitle: 'Stage de 18 semaines',
+    file: 'objet3d/casque.glb',
+    description:
+      'Stage de 18 semaines au ministère des armées — développement d\'applications et systèmes pour la défense.',
+    link: null, // Pas de GitHub
+  },
+  {
+    id: 'projet_ero',
+    name: 'Projet ERO',
+    subtitle: 'Parcours de graphes dans la ville de Montréal',
+    file: 'objet3d/deneigeuse.glb',
+    description:
+      'Optimisation de parcours de graphes pour la gestion de la déneigement dans la ville de Montréal — développement en Python.',
+    link: 'https://github.com/example/projet-ero',
+  },
 ];
 
 const manager = new THREE.LoadingManager();
@@ -228,9 +255,9 @@ function createHTMLPopup(project) {
         <h2 class="popup-title">${project.name}</h2>
         ${project.subtitle ? `<h3 class="popup-subtitle">${project.subtitle}</h3>` : ''}
         <p class="popup-description">${project.description}</p>
-        <button class="popup-button" data-link="${project.link}">
+        ${project.link ? `<button class="popup-button" data-link="${project.link}">
           <span>Voir sur GitHub</span>
-        </button>
+        </button>` : ''}
       </div>
     </div>
   `;
@@ -244,10 +271,12 @@ function createHTMLPopup(project) {
   });
   
   const button = popup.querySelector('.popup-button');
-  button.addEventListener('click', (e) => {
-    e.stopPropagation();
-    window.open(project.link, '_blank');
-  });
+  if (button && project.link) {
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.open(project.link, '_blank');
+    });
+  }
   
   popup.addEventListener('click', (e) => {
     if (e.target === popup || e.target.classList.contains('popup-glass')) {
