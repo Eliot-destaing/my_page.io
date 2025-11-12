@@ -373,8 +373,6 @@ async function loadProjects() {
           node.material = converted || new THREE.MeshStandardMaterial({ color: 0x888888 });
         }
 
-        node.layers.enable(ENTIRE_SCENE);
-        node.layers.disable(BLOOM_SCENE);
         meshes.push(node);
       }
     });
