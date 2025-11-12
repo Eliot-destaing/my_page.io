@@ -67,9 +67,9 @@ scene.add(sideLight2);
 
 const nebulaUniforms = {
   uTime: { value: 0 },
-  uColorInner: { value: new THREE.Color(0x3d2b53) }, // Plus lumineux
-  uColorOuter: { value: new THREE.Color(0x1a0b2f) }, // Plus lumineux
-  uAccent: { value: new THREE.Color(0x7450c8) }, // Plus lumineux
+  uColorInner: { value: new THREE.Color(0x5d4b73) }, // Encore plus lumineux
+  uColorOuter: { value: new THREE.Color(0x2a1b3f) }, // Encore plus lumineux
+  uAccent: { value: new THREE.Color(0x9470d8) }, // Encore plus lumineux
 };
 const nebulaMaterial = new THREE.ShaderMaterial({
   side: THREE.BackSide,
@@ -146,13 +146,13 @@ const debrisMaterial = new THREE.MeshStandardMaterial({
   roughness: 0.8,
   emissive: new THREE.Color(0x111424),
 });
-// Débris de plusieurs tailles
+// Débris de plusieurs tailles, plus loin dans le décor
 const debrisSizes = [0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.7];
 for (let i = 0; i < 120; i++) {
   const size = debrisSizes[Math.floor(Math.random() * debrisSizes.length)];
   const geometry = new THREE.TetrahedronGeometry(size, 1);
   const mesh = new THREE.Mesh(geometry, debrisMaterial.clone());
-  const pos = new THREE.Vector3().randomDirection().multiplyScalar(THREE.MathUtils.randFloat(2.2, 10.0));
+  const pos = new THREE.Vector3().randomDirection().multiplyScalar(THREE.MathUtils.randFloat(8.0, 25.0)); // Plus loin
   mesh.position.copy(pos);
   mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
   mesh.material.emissiveIntensity = THREE.MathUtils.randFloat(0.1, 0.5);
@@ -160,56 +160,6 @@ for (let i = 0; i < 120; i++) {
   debrisGroup.add(mesh);
 }
 
-// Planètes au loin
-const planetsGroup = new THREE.Group();
-scene.add(planetsGroup);
-const planetData = [
-  { radius: 0.8, distance: 15, color: 0x8b6f47, speed: 0.1 }, // Planète brune
-  { radius: 1.2, distance: 18, color: 0x4a5d7a, speed: 0.08 }, // Planète bleue
-  { radius: 0.6, distance: 20, color: 0x7a5a4a, speed: 0.12 }, // Planète orange
-  { radius: 1.0, distance: 22, color: 0x5a4a6a, speed: 0.09 }, // Planète violette
-];
-planetData.forEach((data, i) => {
-  const geometry = new THREE.SphereGeometry(data.radius, 32, 32);
-  const material = new THREE.MeshStandardMaterial({
-    color: data.color,
-    emissive: data.color,
-    emissiveIntensity: 0.2,
-    metalness: 0.1,
-    roughness: 0.9,
-  });
-  const planet = new THREE.Mesh(geometry, material);
-  const angle = (i / planetData.length) * Math.PI * 2;
-  planet.position.set(
-    Math.cos(angle) * data.distance,
-    Math.sin(angle * 0.5) * 3,
-    Math.sin(angle) * data.distance
-  );
-  planet.userData.initialAngle = angle;
-  planet.userData.speed = data.speed;
-  planet.userData.distance = data.distance;
-  planetsGroup.add(planet);
-});
-
-// Soleil avec lumière
-const sunGeometry = new THREE.SphereGeometry(2.5, 32, 32);
-const sunMaterial = new THREE.MeshBasicMaterial({
-  color: 0xffd700,
-  emissive: 0xffaa00,
-  emissiveIntensity: 1.5,
-});
-const sun = new THREE.Mesh(sunGeometry, sunMaterial);
-sun.position.set(12, 8, -15);
-scene.add(sun);
-
-// Lumière du soleil
-const sunLight = new THREE.PointLight(0xffd700, 2.0, 50);
-sunLight.position.copy(sun.position);
-scene.add(sunLight);
-
-// Lumière ambiante supplémentaire du soleil
-const sunAmbient = new THREE.AmbientLight(0xffd700, 0.3);
-scene.add(sunAmbient);
 
 const goldenRatio = (1 + Math.sqrt(5)) / 2;
 const projectsData = [
@@ -318,6 +268,9 @@ function createHTMLPopup(project) {
   popup.innerHTML = `
     <div class="popup-glass">
       <button class="popup-close" aria-label="Fermer">×</button>
+      <div class="popup-3d-container">
+        <canvas class="popup-3d-canvas"></canvas>
+      </div>
       <div class="popup-content">
         <h2 class="popup-title">${project.name}</h2>
         ${project.subtitle ? `<h3 class="popup-subtitle">${project.subtitle}</h3>` : ''}
@@ -356,6 +309,13 @@ function createHTMLPopup(project) {
 
 const popups = new Map();
 let activePopup = null;
+let popupRenderer = null;
+let popupScene = null;
+let popupCamera = null;
+let popupObject = null;
+let popupRotation = { x: 0, y: 0 };
+let isDragging = false;
+let lastMousePos = { x: 0, y: 0 };
 
 const slowMotion = { value: 1 };
 
@@ -522,6 +482,106 @@ function handleSelection() {
   }
 }
 
+function setupPopup3D(anchor, canvas) {
+  // Créer le renderer 3D pour la popup
+  popupRenderer = new THREE.WebGLRenderer({ 
+    canvas: canvas, 
+    antialias: true, 
+    alpha: true 
+  });
+  popupRenderer.setSize(400, 400);
+  popupRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  popupRenderer.outputColorSpace = THREE.SRGBColorSpace;
+  
+  // Créer la scène 3D pour la popup
+  popupScene = new THREE.Scene();
+  popupCamera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+  popupCamera.position.set(0, 0, 5);
+  
+  // Éclairage pour la popup
+  const popupAmbient = new THREE.AmbientLight(0xffffff, 1.0);
+  popupScene.add(popupAmbient);
+  const popupKey = new THREE.DirectionalLight(0xffffff, 1.2);
+  popupKey.position.set(5, 5, 5);
+  popupScene.add(popupKey);
+  const popupFill = new THREE.DirectionalLight(0xffffff, 0.6);
+  popupFill.position.set(-5, 3, -5);
+  popupScene.add(popupFill);
+  
+  // Cloner l'objet 3D
+  const originalAsset = anchor.userData.asset;
+  popupObject = originalAsset.clone();
+  popupObject.traverse(node => {
+    if (node.isMesh && node.material) {
+      node.material = node.material.clone();
+    }
+  });
+  
+  // Calculer la taille appropriée pour la popup
+  const box = new THREE.Box3().setFromObject(popupObject);
+  const size = box.getSize(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const scale = 2.5 / maxDim; // Taille cible de 2.5 unités
+  popupObject.scale.multiplyScalar(scale);
+  
+  // Centrer l'objet
+  box.setFromObject(popupObject);
+  const center = box.getCenter(new THREE.Vector3());
+  popupObject.position.sub(center);
+  
+  popupScene.add(popupObject);
+  popupRotation = { x: 0, y: 0 };
+  
+  // Gérer la rotation avec la souris
+  let isDraggingPopup = false;
+  let lastMousePosPopup = { x: 0, y: 0 };
+  
+  canvas.addEventListener('mousedown', (e) => {
+    isDraggingPopup = true;
+    lastMousePosPopup.x = e.clientX;
+    lastMousePosPopup.y = e.clientY;
+  });
+  
+  canvas.addEventListener('mousemove', (e) => {
+    if (isDraggingPopup) {
+      const dx = e.clientX - lastMousePosPopup.x;
+      const dy = e.clientY - lastMousePosPopup.y;
+      popupRotation.y += dx * 0.01;
+      popupRotation.x += dy * 0.01;
+      popupRotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, popupRotation.x));
+      lastMousePosPopup.x = e.clientX;
+      lastMousePosPopup.y = e.clientY;
+    }
+  });
+  
+  canvas.addEventListener('mouseup', () => {
+    isDraggingPopup = false;
+  });
+  
+  canvas.addEventListener('mouseleave', () => {
+    isDraggingPopup = false;
+  });
+  
+  // Animation de la popup 3D
+  function animatePopup() {
+    if (!popupRenderer || !popupScene || !popupCamera || !popupObject) return;
+    requestAnimationFrame(animatePopup);
+    
+    // Appliquer la rotation
+    popupObject.rotation.y = popupRotation.y;
+    popupObject.rotation.x = popupRotation.x;
+    
+    // Rotation automatique lente si pas de drag
+    if (!isDraggingPopup) {
+      popupRotation.y += 0.005;
+    }
+    
+    popupRenderer.render(popupScene, popupCamera);
+  }
+  
+  animatePopup();
+}
+
 function openPopup(project) {
   const popup = popups.get(project.id);
   if (!popup) return;
@@ -530,10 +590,17 @@ function openPopup(project) {
   
   // Marquer le projet comme visité
   const anchor = projectAnchors.find(a => a.userData.project.id === project.id);
-  if (anchor && !anchor.userData.visited) {
+  if (!anchor) return;
+  
+  if (!anchor.userData.visited) {
     anchor.userData.visited = true;
     updateCounter();
   }
+  
+  // Sauvegarder la position et rotation originales
+  anchor.userData.originalPosition = anchor.position.clone();
+  anchor.userData.originalRotation = anchor.rotation.clone();
+  anchor.userData.originalScale = anchor.userData.asset.scale.clone();
   
   // Désactiver le pointer lock pour permettre les clics normaux
   if (document.pointerLockElement === renderer.domElement) {
@@ -545,6 +612,11 @@ function openPopup(project) {
   
   popup.style.display = 'flex';
   popup.style.opacity = '0';
+  
+  const canvas = popup.querySelector('.popup-3d-canvas');
+  if (canvas) {
+    setupPopup3D(anchor, canvas);
+  }
   
   const glass = popup.querySelector('.popup-glass');
   const closeBtn = popup.querySelector('.popup-close');
@@ -603,6 +675,27 @@ function closePopup() {
   const popup = activePopup;
   activePopup = null;
   toggleSlowMotion(false);
+  
+  // Nettoyer la scène 3D de la popup
+  if (popupRenderer) {
+    popupRenderer.dispose();
+    popupRenderer = null;
+  }
+  if (popupScene) {
+    popupScene.traverse(obj => {
+      if (obj.geometry) obj.geometry.dispose();
+      if (obj.material) {
+        if (Array.isArray(obj.material)) {
+          obj.material.forEach(mat => mat.dispose());
+        } else {
+          obj.material.dispose();
+        }
+      }
+    });
+    popupScene = null;
+  }
+  popupCamera = null;
+  popupObject = null;
   
   // Retirer la classe pour réactiver les interactions avec le canvas
   document.body.classList.remove('popup-open');
@@ -710,20 +803,6 @@ function animate() {
     mesh.rotation.z += mesh.userData.spin.z * delta;
   });
 
-  // Animation des planètes
-  planetsGroup.children.forEach(planet => {
-    const t = clock.elapsedTime;
-    const angle = planet.userData.initialAngle + t * planet.userData.speed;
-    planet.position.set(
-      Math.cos(angle) * planet.userData.distance,
-      Math.sin(angle * 0.5) * 3,
-      Math.sin(angle) * planet.userData.distance
-    );
-    planet.rotation.y += delta * 0.2;
-  });
-
-  // Animation du soleil (rotation lente)
-  sun.rotation.y += delta * 0.1;
 
   projectAnchors.forEach(anchor => {
     const asset = anchor.userData.asset;
