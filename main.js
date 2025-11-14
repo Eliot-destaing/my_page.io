@@ -370,8 +370,8 @@ function createObjectsBar() {
     
     const canvas = document.createElement('canvas');
     canvas.className = 'thumbnail-canvas';
-    canvas.width = 80;
-    canvas.height = 80;
+    canvas.width = 70;
+    canvas.height = 70;
     thumbnail.appendChild(canvas);
     
     // Créer un renderer miniature
@@ -380,7 +380,7 @@ function createObjectsBar() {
       antialias: true, 
       alpha: true 
     });
-    thumbRenderer.setSize(80, 80);
+    thumbRenderer.setSize(70, 70);
     thumbRenderer.setPixelRatio(1);
     thumbRenderer.outputColorSpace = THREE.SRGBColorSpace;
     
