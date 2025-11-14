@@ -206,7 +206,7 @@ const projectsData = [
     subtitle: 'Parcours de graphes dans la ville de Montréal',
     file: 'objet3d/deneigeuse.glb',
     description:
-      'Optimisation de parcours de graphes pour la gestion de la déneigement dans la ville de Montréal — développement en Python.',
+      'Optimisation de parcours de graphes pour la gestion de la déneigement dans la ville de Montréal Optimisation de parcours de graphes pour la gestion de la déneigement dans la ville de MontréalOptimisation de parcours de graphes pour la gestion de la déneigement dans la ville de MontréalOptimisation de parcours de graphes pour la gestion de la déneigement dans la ville de MontréalOptimisation de parcours de graphes pour la gestion de la déneigement dans la ville de MontréalOptimisation de parcours de graphes pour la gestion de la déneigement dans la ville de Montréal— développement en Python.',
     link: 'https://github.com/example/projet-ero',
     distance: 8.2,
     taille: 5.5,        // Déneigeuse plus grande
@@ -545,31 +545,52 @@ function setupPopup3D(anchor, canvas) {
   let isDraggingPopup = false;
   let lastMousePosPopup = { x: 0, y: 0 };
   
-  canvas.addEventListener('mousedown', (e) => {
+  // S'assurer que le canvas peut recevoir les événements
+  canvas.style.pointerEvents = 'auto';
+  canvas.style.touchAction = 'none';
+  
+  const handleStart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     isDraggingPopup = true;
-    lastMousePosPopup.x = e.clientX;
-    lastMousePosPopup.y = e.clientY;
-  });
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    lastMousePosPopup.x = clientX;
+    lastMousePosPopup.y = clientY;
+  };
   
-  canvas.addEventListener('mousemove', (e) => {
-    if (isDraggingPopup) {
-      const dx = e.clientX - lastMousePosPopup.x;
-      const dy = e.clientY - lastMousePosPopup.y;
-      popupRotation.y += dx * 0.015; // Sensibilité améliorée pour le drag
-      popupRotation.x += dy * 0.015;
-      popupRotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, popupRotation.x));
-      lastMousePosPopup.x = e.clientX;
-      lastMousePosPopup.y = e.clientY;
-    }
-  });
+  const handleMove = (e) => {
+    if (!isDraggingPopup) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const dx = clientX - lastMousePosPopup.x;
+    const dy = clientY - lastMousePosPopup.y;
+    popupRotation.y += dx * 0.015;
+    popupRotation.x += dy * 0.015;
+    popupRotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, popupRotation.x));
+    lastMousePosPopup.x = clientX;
+    lastMousePosPopup.y = clientY;
+  };
   
-  canvas.addEventListener('mouseup', () => {
+  const handleEnd = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     isDraggingPopup = false;
-  });
+  };
   
-  canvas.addEventListener('mouseleave', () => {
-    isDraggingPopup = false;
-  });
+  // Événements souris
+  canvas.addEventListener('mousedown', handleStart);
+  canvas.addEventListener('mousemove', handleMove);
+  canvas.addEventListener('mouseup', handleEnd);
+  canvas.addEventListener('mouseleave', handleEnd);
+  
+  // Événements tactiles
+  canvas.addEventListener('touchstart', handleStart, { passive: false });
+  canvas.addEventListener('touchmove', handleMove, { passive: false });
+  canvas.addEventListener('touchend', handleEnd, { passive: false });
+  canvas.addEventListener('touchcancel', handleEnd, { passive: false });
   
   // Animation de la popup 3D
   function animatePopup() {
