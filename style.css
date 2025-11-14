@@ -102,24 +102,45 @@ body.pointerlocked .hint {
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     0 0 0 1px rgba(255, 255, 255, 0.15);
   padding: 48px 56px;
-  max-width: 900px;
+  max-width: 1000px;
   width: 90%;
   max-height: 85vh;
   overflow-y: auto;
   position: relative;
 }
 
+.popup-layout {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .popup-layout {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .popup-3d-container {
+    width: 100%;
+    max-width: 280px;
+  }
+}
+
 .popup-3d-container {
-  width: 100%;
-  max-width: 300px;
-  height: 300px;
-  margin: 0 auto 32px;
+  flex-shrink: 0;
+  width: 280px;
+  height: 280px;
   border-radius: 20px;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .popup-3d-canvas {
@@ -183,11 +204,13 @@ body.pointerlocked .hint {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  flex: 1;
+  min-width: 300px;
 }
 
 .popup-title {
   margin: 0;
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-weight: 700;
   color: #ffffff;
   letter-spacing: -0.02em;
@@ -196,7 +219,7 @@ body.pointerlocked .hint {
 
 .popup-subtitle {
   margin: 0;
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   font-weight: 500;
   color: #b3d9ff;
   letter-spacing: -0.01em;
@@ -205,7 +228,7 @@ body.pointerlocked .hint {
 
 .popup-description {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   color: #d0e5ff;
   line-height: 1.6;
   opacity: 0.9;

@@ -268,16 +268,18 @@ function createHTMLPopup(project) {
   popup.innerHTML = `
     <div class="popup-glass">
       <button class="popup-close" aria-label="Fermer">×</button>
-      <div class="popup-3d-container">
-        <canvas class="popup-3d-canvas"></canvas>
-      </div>
-      <div class="popup-content">
-        <h2 class="popup-title">${project.name}</h2>
-        ${project.subtitle ? `<h3 class="popup-subtitle">${project.subtitle}</h3>` : ''}
-        <p class="popup-description">${project.description}</p>
-        ${project.link ? `<button class="popup-button" data-link="${project.link}">
-          <span>Voir sur GitHub</span>
-        </button>` : ''}
+      <div class="popup-layout">
+        <div class="popup-3d-container">
+          <canvas class="popup-3d-canvas"></canvas>
+        </div>
+        <div class="popup-content">
+          <h2 class="popup-title">${project.name}</h2>
+          ${project.subtitle ? `<h3 class="popup-subtitle">${project.subtitle}</h3>` : ''}
+          <p class="popup-description">${project.description}</p>
+          ${project.link ? `<button class="popup-button" data-link="${project.link}">
+            <span>Voir sur GitHub</span>
+          </button>` : ''}
+        </div>
       </div>
     </div>
   `;
@@ -489,7 +491,7 @@ function setupPopup3D(anchor, canvas) {
     antialias: true, 
     alpha: true 
   });
-  popupRenderer.setSize(300, 300);
+  popupRenderer.setSize(280, 280);
   popupRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   popupRenderer.outputColorSpace = THREE.SRGBColorSpace;
   
@@ -553,8 +555,8 @@ function setupPopup3D(anchor, canvas) {
     if (isDraggingPopup) {
       const dx = e.clientX - lastMousePosPopup.x;
       const dy = e.clientY - lastMousePosPopup.y;
-      popupRotation.y += dx * 0.01;
-      popupRotation.x += dy * 0.01;
+      popupRotation.y += dx * 0.015; // Sensibilité améliorée pour le drag
+      popupRotation.x += dy * 0.015;
       popupRotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, popupRotation.x));
       lastMousePosPopup.x = e.clientX;
       lastMousePosPopup.y = e.clientY;
@@ -580,7 +582,7 @@ function setupPopup3D(anchor, canvas) {
     
     // Rotation automatique lente si pas de drag
     if (!isDraggingPopup) {
-      popupRotation.y += 0.005;
+      popupRotation.y += 0.002; // Rotation plus lente
     }
     
     popupRenderer.render(popupScene, popupCamera);
