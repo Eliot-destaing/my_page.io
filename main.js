@@ -209,7 +209,7 @@ const projectsData = [
       'Optimisation de parcours de graphes pour la gestion de la déneigement dans la ville de Montréal — développement en Python.',
     link: 'https://github.com/example/projet-ero',
     distance: 20.2,
-    taille: 5.5,        // Déneigeuse plus grande
+    taille: 25.5,        // Déneigeuse plus grande
     lumiereMax: 1.0,
   },
 ];
